@@ -9,10 +9,10 @@ Created on Mon Jun 17 23:20:36 2019
 import pandas as pd
 import numpy as np
 
-import time
 import requests
-from bs4 import BeautifulSoup
+import time
 
+from bs4 import BeautifulSoup
 
 def get_sold_list(zipcode):
     
@@ -33,7 +33,7 @@ def get_sold_list(zipcode):
     
     # set output constain and report numbers in feature
     pageNum = searchNum//30 + 1
-    print(pageNum)
+    print(pageNum, 'pages')
     
     soldlist = []
     # loop for each page of search result
@@ -67,7 +67,7 @@ def get_sold_list(zipcode):
                 soldlist.append([address, addresslink, str(zipcode)])
             time.sleep(5)
         
-        return soldlist
+    return soldlist
 
 
 
@@ -93,20 +93,24 @@ def price_history_trulia(url):
         region = np.nan
     else:
         region = obj2.get_text()
+    
+#    if addr != np.nan and region != np.nan:
+#        print(addr, ', ', region)
+#        addr = addr + ', ' + region
         
-    addr = addr + ', ' + region
     # get Price History
     priceHistory = []
     tempHist = []
     
     if soup.find_all('tr') == None:
-        priceHistory.append([addr, np.nan, np.nan, np.nan])
+        priceHistory.append([addr, region, np.nan, np.nan, np.nan])
     else:
         for tr in soup.find_all('tr'):    
             tempHist.append([td.text for td in tr.find_all('td')])
         for row in tempHist:
             if len(row)!=3:
                 continue
+            row.insert(0, region)
             row.insert(0, addr)
             priceHistory.append(row)
             #print(priceHistory[-1])
@@ -114,20 +118,21 @@ def price_history_trulia(url):
     return priceHistory
 
    
-zipList  = ['10510', '10570', '10504']  
+#zipList  = [ '11021','11020','11030'] #'11024','11023',
+zipList = ['11040','11530', '11753','11576','11545']#,'11579','11791'] 
 for zipcode in zipList:
     soldlist = get_sold_list(zipcode)    
     # write links to csv
     urllist = pd.DataFrame(soldlist, columns = ['address','url','zipcode'])
-    urllist.to_csv('./sold_'+ zipcode + '.csv', mode='a', encoding = 'utf-8', index = None)
+    urllist.to_csv('../csv/Nassau/sold_'+ zipcode + '.csv', mode='a', encoding = 'utf-8', index = None)
     print('collected all links from ', zipcode)
             
     dfin = urllist.url
     
-    colnames = ['address', 'Date', 'price','event']
+    colnames = ['address', 'region', 'date', 'price','event']
     dfout = pd.DataFrame(columns = colnames)
     
-    outcsvfile = './sold_price_history'+zipcode+'.csv'
+    outcsvfile = '../csv/Nassau/sold_price_history'+zipcode+'.csv'
     dfout.to_csv(outcsvfile, encoding = 'utf-8', index = None)
             
     count = 0
@@ -136,7 +141,7 @@ for zipcode in zipList:
         #print url
         count += 1
         
-#        if count ==2 : 
+#        if count <12 : 
 #            break
         print(count)
         
